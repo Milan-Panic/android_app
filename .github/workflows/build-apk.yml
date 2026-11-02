@@ -1,0 +1,44 @@
+# Automatski gradi APK na GitHub-u i objavljuje ga kao "Release"
+# sa direktnim linkom za preuzimanje na telefon.
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk NaDanasnjiDan.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NaDanasnjiDan-apk
+          path: NaDanasnjiDan.apk
+
+      - name: Publish release with download link
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Na današnji dan (najnovija verzija)
+          body: Preuzmi NaDanasnjiDan.apk na telefonu i instaliraj ga.
+          files: NaDanasnjiDan.apk
+          make_latest: true

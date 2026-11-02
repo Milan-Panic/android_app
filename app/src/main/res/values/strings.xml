@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Na današnji dan</string>
+    <string name="widget_name">Na današnji dan</string>
+    <string name="widget_description">Fotografija snimljena na današnji dan ranijih godina</string>
+    <string name="title_on_this_day">Na današnji dan · %1$s</string>
+    <string name="need_permission">Aplikaciji je potreban pristup fotografijama da bi pronašla uspomene sa današnjeg dana.</string>
+    <string name="grant_permission">Dozvoli pristup fotografijama</string>
+    <string name="allow_all_photos">Dozvoli pristup svim fotografijama</string>
+    <string name="no_memories">Nema fotografija snimljenih na današnji dan prethodnih godina.</string>
+    <string name="widget_need_permission">Otvori aplikaciju i dozvoli pristup fotografijama</string>
+    <string name="widget_no_memories">Danas nema uspomena iz prethodnih godina</string>
+    <string name="next">Sledeća</string>
+</resources>
