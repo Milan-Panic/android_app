@@ -1,6 +1,5 @@
 package com.milan.nadanasnjidan
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -45,12 +44,8 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.title_on_this_day, dateFmt.format(Calendar.getInstance().time))
 
         adapter = MemoriesAdapter(this, lifecycleScope) { memory ->
-            // Otvori sliku u podrazumevanoj galeriji
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(memory.uri, "image/*")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            runCatching { startActivity(intent) }
+            // Otvori sliku u ugrađenom pregledniku (bez pitanja "čime otvoriti")
+            startActivity(ViewerActivity.intent(this, memory.uri))
         }
 
         val spanCount = 3

@@ -6,54 +6,18 @@
     android:background="@drawable/widget_background"
     android:clipToOutline="true">
 
-    <ImageView
-        android:id="@+id/widgetImage"
+    <!-- Sam smenjuje slike svake 2 sekunde (pokreće ga početni ekran, ne aplikacija) -->
+    <AdapterViewFlipper
+        android:id="@+id/widgetFlipper"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:contentDescription="@string/widget_description"
-        android:scaleType="centerCrop" />
+        android:autoStart="true"
+        android:flipInterval="2000"
+        android:inAnimation="@android:animator/fade_in"
+        android:loopViews="true"
+        android:outAnimation="@android:animator/fade_out" />
 
-    <!-- Natpis na dnu, preko tamnog prelaza -->
-    <LinearLayout
-        android:id="@+id/widgetCaption"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@drawable/widget_scrim"
-        android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingTop="28dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="12dp">
-
-        <TextView
-            android:id="@+id/widgetTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/widgetSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#CCFFFFFF"
-            android:textSize="12sp" />
-    </LinearLayout>
-
-    <ImageButton
-        android:id="@+id/widgetNext"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="8dp"
-        android:background="@drawable/widget_button_bg"
-        android:contentDescription="@string/next"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_next" />
-
+    <!-- Prikazuje se kad nema slika ili nema dozvole -->
     <TextView
         android:id="@+id/widgetMessage"
         android:layout_width="match_parent"
@@ -61,6 +25,5 @@
         android:gravity="center"
         android:padding="16dp"
         android:textColor="#B3FFFFFF"
-        android:textSize="14sp"
-        android:visibility="gone" />
+        android:textSize="14sp" />
 </FrameLayout>

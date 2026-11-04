@@ -10,5 +10,5 @@
     <string name="no_memories">Nema fotografija snimljenih na današnji dan prethodnih godina.</string>
     <string name="widget_need_permission">Otvori aplikaciju i dozvoli pristup fotografijama</string>
     <string name="widget_no_memories">Danas nema uspomena iz prethodnih godina</string>
-    <string name="next">Sledeća</string>
+    <string name="close">Zatvori</string>
 </resources>

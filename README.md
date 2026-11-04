@@ -15,8 +15,9 @@ APK za instaliranje bez kabla: **Build → Build App Bundle(s) / APK(s) → Buil
 
 ## Šta radi
 
-- **Aplikacija**: mreža slika grupisanih po godinama ("2023 · Pre 3 godine · 12"). Tap otvara sliku u galeriji.
-- **Widget**: jedna slika sa natpisom "Pre N godina". Dugme › prikazuje sledeću od današnjih slika, a tap na sliku otvara aplikaciju. Svakog dana kreće od nasumične slike.
+- **Aplikacija**: mreža slika grupisanih po godinama ("2023 · Pre 3 godine · 12"). Tap otvara sliku u ugrađenom pregledniku preko celog ekrana; prevlačenjem se prelazi na ostale.
+- **Widget**: slike se same smenjuju svake 2 sekunde (AdapterViewFlipper), sa natpisom "Pre N godina". Tap na sliku otvara baš tu sliku u pregledniku. Redosled je izmešan i menja se svakog dana.
+- APK se potpisuje stalnim ključem iz `keystore/`, da bi se nove verzije instalirale preko stare.
 - **Ponoćno osvežavanje**: `AlarmManager.setAndAllowWhileIdle` za 00:01. Alarm se ponovo zakazuje posle restarta telefona i kad se promeni vreme ili vremenska zona.
 - 28. februara u neprestupnoj godini prikazuju se i slike sa 29. februara.
 - Datum se uzima iz `DATE_TAKEN` (EXIF), a ako ga nema, iz datuma dodavanja fajla.

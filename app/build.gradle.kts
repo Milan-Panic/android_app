@@ -11,8 +11,19 @@ android {
         applicationId = "com.milan.nadanasnjidan"
         minSdk = 29          // Android 10+ (potrebno za ContentResolver.loadThumbnail)
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    // Stalni ključ za potpis, da bi se nove verzije instalirale preko stare
+    // (bez njega GitHub svaki put pravi novi ključ i telefon odbija update).
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {

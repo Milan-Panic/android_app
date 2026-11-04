@@ -5,7 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.view.View
+import android.net.Uri
 import android.widget.RemoteViews
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -14,9 +14,8 @@ import kotlin.random.Random
 
 object WidgetUpdater {
 
-    private const val PREFS = "widget_state"
-    private const val KEY_DATE = "date"
-    private const val KEY_INDEX = "index"
+    /** Najviše slika u widgetu (zbog memorije početnog ekrana). */
+    private const val MAX_WIDGET_PHOTOS = 60
 
     /** Poziva se iz aktivnosti: pokreće osvežavanje bez blokiranja UI niti. */
     fun requestUpdate(context: Context) {
@@ -25,87 +24,64 @@ object WidgetUpdater {
     }
 
     /**
-     * Osvežava sve widgete. Mora se zvati van glavne niti (radi upit nad galerijom).
-     * @param advance true = prikaži sledeću sliku od današnjih.
+     * Današnje slike za widget, izmešane. Redosled je isti tokom celog dana
+     * (seme je datum), a sutra je drugačiji.
      */
-    fun updateAll(context: Context, advance: Boolean = false) {
+    fun widgetMemories(context: Context): List<Memory> {
+        val seed = SimpleDateFormat("yyyyMMdd", Locale.US).format(Calendar.getInstance().time).toInt()
+        return PhotoRepository.findForToday(context)
+            .shuffled(Random(seed))
+            .take(MAX_WIDGET_PHOTOS)
+    }
+
+    /** Osvežava sve widgete (okvir + listu slika). */
+    fun updateAll(context: Context) {
         val manager = AppWidgetManager.getInstance(context)
         val ids = manager.getAppWidgetIds(ComponentName(context, OnThisDayWidget::class.java))
         if (ids.isEmpty()) return
 
-        val views = buildViews(context, advance)
-        manager.updateAppWidget(ids, views)
+        for (id in ids) {
+            manager.updateAppWidget(id, buildViews(context, id))
+        }
+        // Natera flipper da ponovo učita današnje slike
+        manager.notifyAppWidgetViewDataChanged(ids, R.id.widgetFlipper)
     }
 
-    private fun buildViews(context: Context, advance: Boolean): RemoteViews {
+    @Suppress("DEPRECATION")
+    private fun buildViews(context: Context, widgetId: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_on_this_day)
 
-        // Tap na widget otvara aplikaciju
+        // Izvor slika za flipper (data je jedinstven po widgetu)
+        val serviceIntent = Intent(context, WidgetPhotosService::class.java).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+            data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+        }
+        views.setRemoteAdapter(R.id.widgetFlipper, serviceIntent)
+        views.setEmptyView(R.id.widgetFlipper, R.id.widgetMessage)
+
+        val message = if (PhotoRepository.hasPermission(context)) {
+            R.string.widget_no_memories
+        } else {
+            R.string.widget_need_permission
+        }
+        views.setTextViewText(R.id.widgetMessage, context.getString(message))
+
+        // Tap na sliku: otvara preglednik; koja slika, dopunjava svaka stavka (fill-in intent)
+        val viewerTemplate = PendingIntent.getActivity(
+            context, widgetId,
+            Intent(context, ViewerActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        views.setPendingIntentTemplate(R.id.widgetFlipper, viewerTemplate)
+
+        // Tap na poruku (nema slika / nema dozvole) otvara aplikaciju
         val openApp = PendingIntent.getActivity(
             context, 0,
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        views.setOnClickPendingIntent(R.id.widgetRoot, openApp)
-
-        // Dugme "sledeća"
-        val next = PendingIntent.getBroadcast(
-            context, 1,
-            Intent(context, OnThisDayWidget::class.java).setAction(OnThisDayWidget.ACTION_NEXT),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        views.setOnClickPendingIntent(R.id.widgetNext, next)
-
-        if (!PhotoRepository.hasPermission(context)) {
-            showMessage(views, context.getString(R.string.widget_need_permission))
-            return views
-        }
-
-        val memories = PhotoRepository.findForToday(context)
-        if (memories.isEmpty()) {
-            showMessage(views, context.getString(R.string.widget_no_memories))
-            return views
-        }
-
-        // Svakog novog dana krećemo od nasumične slike; "sledeća" ide redom.
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val todayKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
-        var index = if (prefs.getString(KEY_DATE, null) == todayKey) {
-            prefs.getInt(KEY_INDEX, 0)
-        } else {
-            Random.nextInt(memories.size)
-        }
-        if (advance) index++
-        index = ((index % memories.size) + memories.size) % memories.size
-        prefs.edit().putString(KEY_DATE, todayKey).putInt(KEY_INDEX, index).apply()
-
-        val memory = memories[index]
-        // 640px je dovoljno oštro za widget, a ostaje ispod ograničenja veličine za RemoteViews
-        val bitmap = PhotoRepository.loadThumbnail(context, memory.uri, 640)
-        if (bitmap == null) {
-            showMessage(views, context.getString(R.string.widget_no_memories))
-            return views
-        }
-
-        val yearsAgo = Calendar.getInstance().get(Calendar.YEAR) - memory.year
-        views.setViewVisibility(R.id.widgetImage, View.VISIBLE)
-        views.setViewVisibility(R.id.widgetCaption, View.VISIBLE)
-        views.setViewVisibility(R.id.widgetMessage, View.GONE)
-        views.setViewVisibility(R.id.widgetNext, if (memories.size > 1) View.VISIBLE else View.GONE)
-        views.setImageViewBitmap(R.id.widgetImage, bitmap)
-        views.setTextViewText(R.id.widgetTitle, PhotoRepository.yearsAgoText(yearsAgo))
-        views.setTextViewText(
-            R.id.widgetSubtitle,
-            "${memory.year} · ${index + 1}/${memories.size}"
-        )
+        views.setOnClickPendingIntent(R.id.widgetMessage, openApp)
         return views
-    }
-
-    private fun showMessage(views: RemoteViews, text: String) {
-        views.setViewVisibility(R.id.widgetImage, View.GONE)
-        views.setViewVisibility(R.id.widgetCaption, View.GONE)
-        views.setViewVisibility(R.id.widgetNext, View.GONE)
-        views.setViewVisibility(R.id.widgetMessage, View.VISIBLE)
-        views.setTextViewText(R.id.widgetMessage, text)
     }
 }
