@@ -39,12 +39,6 @@
             android:exported="false"
             android:theme="@style/Theme.NaDanasnjiDan.Viewer" />
 
-        <!-- Daje slike widgetu koji ih smenjuje -->
-        <service
-            android:name=".WidgetPhotosService"
-            android:exported="false"
-            android:permission="android.permission.BIND_REMOTEVIEWS" />
-
         <!-- Widget za početni ekran -->
         <receiver
             android:name=".OnThisDayWidget"
