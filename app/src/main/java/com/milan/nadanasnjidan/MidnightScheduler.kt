@@ -5,14 +5,14 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import java.util.Calendar
 
 /**
  * Zakazuje osvežavanje widgeta svake noći malo posle ponoći.
  *
- * Koristi setAndAllowWhileIdle: alarm radi i kada je telefon u "Doze" režimu,
- * ali ga sistem može odložiti nekoliko minuta radi uštede baterije. Za ovu
- * namenu je to sasvim dovoljno i ne traži posebnu dozvolu za tačne alarme.
+ * Koristi tačan alarm (setExactAndAllowWhileIdle) koji radi i u "Doze" režimu.
+ * Ako sistem ne dozvoli tačne alarme, pada na približan (može kasniti par minuta).
  */
 object MidnightScheduler {
 
@@ -34,7 +34,17 @@ object MidnightScheduler {
             set(Calendar.MILLISECOND, 0)
         }
         val am = context.getSystemService(AlarmManager::class.java)
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.timeInMillis, pendingIntent(context))
+        val pi = pendingIntent(context)
+        val exactAllowed = Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()
+        try {
+            if (exactAllowed) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.timeInMillis, pi)
+            } else {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.timeInMillis, pi)
+            }
+        } catch (e: SecurityException) {
+            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.timeInMillis, pi)
+        }
     }
 
     fun cancel(context: Context) {

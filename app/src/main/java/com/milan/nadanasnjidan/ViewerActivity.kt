@@ -55,10 +55,21 @@ class ViewerActivity : AppCompatActivity() {
         })
 
         val startUri = intent.getStringExtra(EXTRA_URI)?.let(Uri::parse)
+        // Dan za koji je napravljen spisak (widget može da prikazuje jučerašnji spisak
+        // ako ponoćno osvežavanje kasni), da bi se prikazao isti spisak kao na widgetu.
+        val day = Calendar.getInstance().apply {
+            timeInMillis = intent.getLongExtra(EXTRA_DAY, System.currentTimeMillis())
+        }
 
         lifecycleScope.launch {
             memories = withContext(Dispatchers.IO) {
-                PhotoRepository.findForToday(this@ViewerActivity)
+                val list = PhotoRepository.findForToday(this@ViewerActivity, day)
+                // Ako tapnuta slika ipak nije na spisku, prikaži je svejedno (prvu).
+                if (startUri != null && list.none { it.uri == startUri }) {
+                    listOfNotNull(PhotoRepository.memoryFor(this@ViewerActivity, startUri)) + list
+                } else {
+                    list
+                }
             }
             if (memories.isEmpty()) {
                 finish()
@@ -135,6 +146,7 @@ class ViewerActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_URI = "uri"
+        const val EXTRA_DAY = "day"
 
         fun intent(context: Context, uri: Uri) =
             Intent(context, ViewerActivity::class.java).putExtra(EXTRA_URI, uri.toString())

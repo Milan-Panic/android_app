@@ -11,8 +11,8 @@ android {
         applicationId = "com.milan.nadanasnjidan"
         minSdk = 29          // Android 10+ (potrebno za ContentResolver.loadThumbnail)
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     // Stalni ključ za potpis, da bi se nove verzije instalirale preko stare

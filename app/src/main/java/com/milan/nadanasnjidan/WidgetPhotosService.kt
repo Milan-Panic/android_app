@@ -15,11 +15,13 @@ class WidgetPhotosService : RemoteViewsService() {
 private class PhotosFactory(private val context: Context) : RemoteViewsService.RemoteViewsFactory {
 
     private var items: List<Memory> = emptyList()
+    private var listDay: Long = System.currentTimeMillis()
 
     override fun onCreate() {}
 
     // Poziva se pri dodavanju widgeta i posle ponoći (notifyAppWidgetViewDataChanged)
     override fun onDataSetChanged() {
+        listDay = System.currentTimeMillis()
         items = WidgetUpdater.widgetMemories(context)
     }
 
@@ -43,7 +45,9 @@ private class PhotosFactory(private val context: Context) : RemoteViewsService.R
         // Tap na sliku otvara baš ovu sliku u pregledniku aplikacije
         views.setOnClickFillInIntent(
             R.id.widgetItemRoot,
-            Intent().putExtra(ViewerActivity.EXTRA_URI, memory.uri.toString())
+            Intent()
+                .putExtra(ViewerActivity.EXTRA_URI, memory.uri.toString())
+                .putExtra(ViewerActivity.EXTRA_DAY, listDay)
         )
         return views
     }

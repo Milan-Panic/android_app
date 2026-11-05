@@ -96,6 +96,19 @@ object PhotoRepository {
         return result
     }
 
+    /** Podaci o jednoj konkretnoj slici (za slučaj da nije na spisku za taj dan). */
+    fun memoryFor(ctx: Context, uri: Uri): Memory? = try {
+        val projection = arrayOf(MediaStore.Images.Media.DATE_TAKEN, MediaStore.Images.Media.DATE_ADDED)
+        ctx.contentResolver.query(uri, projection, null, null, null)?.use { c ->
+            if (!c.moveToFirst()) return@use null
+            val taken = if (!c.isNull(0) && c.getLong(0) > 0) c.getLong(0) else c.getLong(1) * 1000L
+            val year = Calendar.getInstance().apply { timeInMillis = taken }.get(Calendar.YEAR)
+            Memory(uri, taken, year)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
     /** Učitava umanjenu verziju slike (brzo, bez učitavanja originala u memoriju). */
     fun loadThumbnail(ctx: Context, uri: Uri, sizePx: Int): Bitmap? = try {
         ctx.contentResolver.loadThumbnail(uri, Size(sizePx, sizePx), null)
